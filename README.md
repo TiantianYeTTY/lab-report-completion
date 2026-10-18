@@ -86,8 +86,12 @@ git clone https://github.com/TiantianYeTTY/lab-report-completion.git ~/.workbudd
 
 ```
 lab-report-completion/
-├── README.md     ← 本文件
-└── SKILL.md      ← 技能正文：完整工作流 + 20 条易错点速查表 + 交付前检查清单
+├── README.md               ← 本文件
+├── SKILL.md                ← 技能正文：完整工作流 + 20 条易错点速查表 + 检查清单
+└── scripts/
+    ├── capture_screenshots.py   ← 真机截图管线（Chrome+CDP+screencapture，单tab持久导航）
+    ├── update_docx_images.py    ← Word 图片按文档序号替换/删除（edsdk）
+    └── fill_report.py           ← 原版 Word 副本原位填充截图与小结（JSON 计划驱动）
 ```
 
 ## 🐛 已知踩坑点（节选）
@@ -100,6 +104,21 @@ SKILL.md 中记录了完整的 20 条「错误现象 → 根因 → 正确处理
 - `doc_find` 匹配只是段落前缀，直接 `end+1` 插入会把标题撕成两半；
 - 强杀 Chrome 后的崩溃对话框与"恢复标签页"气泡的清理方法；
 - ……
+
+## 🛠️ 可复用脚本
+
+`scripts/` 内三个脚本均为真实实验全流程实测产物，参数化后可直接运行（详见 SKILL.md §8）：
+
+```bash
+# ① 真机截图（前置：按 SKILL.md §4.1 启动 Jupyter 与 Chrome）
+python3 scripts/capture_screenshots.py --notebooks-dir /abs/笔记本目录 --out-dir /abs/截图目录
+
+# ② Word 图片替换/删除（先 --dry-run 查看序号）
+python3 scripts/update_docx_images.py /abs/报告.docx --dry-run
+
+# ③ 原版 Word 副本原位填充（JSON 计划驱动，--print-plan-template 查看结构）
+python3 scripts/fill_report.py plan.json
+```
 
 ## 👤 作者
 

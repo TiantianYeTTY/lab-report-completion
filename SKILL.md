@@ -276,7 +276,46 @@ python3 edsdk.py call doc_insert_image --json '{"file_id":"...","idx":1347,"imag
 | 19 | 数据文件被误改 | 直接在原目录跑代码 | 一律副本操作 + md5 终检 |
 | 20 | 报告被重建成"格式不对" | 用 python-docx 从头写 | **必须复制原版 .doc 原位填充** |
 
-## 8. 交付前检查清单
+## 8. 可复用脚本（scripts/）
+
+三个脚本来自真实实验全流程实测并已参数化，可直接使用（也可按前文原理重写）：
+
+| 脚本 | 作用 | 核心参数 |
+|---|---|---|
+| `capture_screenshots.py` | 真机截图管线（单tab持久导航版，自动关横幅、超一屏自动两连拍） | `--notebooks-dir` `--out-dir` `--notebooks` `--base-url` `--img-w/--img-h` |
+| `update_docx_images.py` | 按 doc_get_images 文档顺序替换/删除 Word 图片 | `--replace N=图片路径` `--delete N` `--dry-run` `--out` |
+| `fill_report.py` | 原版 Word 副本原位填充截图与小结（JSON 计划驱动） | `plan.json`（`--print-plan-template` 查看结构） |
+
+### capture_screenshots.py
+
+前置：jupyter-notebook 与 Chrome 已按 §4.1 启动；依赖 `pip install websocket-client pyobjc-framework-Quartz`。
+
+```bash
+python3 scripts/capture_screenshots.py \
+    --notebooks-dir /abs/实验N代码/jupyter笔记本 \
+    --out-dir /abs/工作目录/截图
+```
+
+### update_docx_images.py
+
+先 `--dry-run` 列出图片序号，确认后再替换/删除（序号按操作前列表计，删除自动从大到小执行）：
+
+```bash
+python3 scripts/update_docx_images.py /abs/完成版.docx --dry-run
+python3 scripts/update_docx_images.py /abs/完成版.docx \
+    --replace 5=/abs/截图/新图1.png --replace 6=/abs/截图/新图2.png --delete 17
+```
+
+### fill_report.py
+
+```bash
+python3 scripts/fill_report.py --print-plan-template   # 查看计划文件结构
+python3 scripts/fill_report.py plan.json
+```
+
+plan.json 字段：`template_doc`（原版模板，只读）/ `work_doc`（工作副本，可选，缺省为模板旁“-完成版.doc”）/ `out_docx` / `img_w,img_h`（548×331≈14.5cm）/ `sections[]`（按文档顺序；`find` 标签须为独立整段，混排段落自动跳过）/ `summary{find,markdown}`。脚本自动处理：模板复制、段落结构树定位（防前缀标签撕标题）、.doc→.docx 保存、文档异步打开就绪轮询、edsdk 路径变更探测。
+
+## 9. 交付前检查清单
 
 - [ ] 报告中每个"（x.x）输入以下命令"的代码与原模板截图逐字一致
 - [ ] 每个题的运行截图为真机截图且经目检（无对话框、无用户窗口、无 Not Trusted）
