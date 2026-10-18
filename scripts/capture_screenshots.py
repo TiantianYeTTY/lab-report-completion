@@ -1,3 +1,4 @@
+# Designed by TiantianYe
 #!/usr/bin/env python3
 """真机截图管线：用真实 Chrome 窗口打开已执行过的 Jupyter 笔记本，系统级 screencapture 截屏。
 

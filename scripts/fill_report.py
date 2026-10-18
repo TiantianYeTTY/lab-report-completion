@@ -1,3 +1,4 @@
+# Designed by TiantianYe
 #!/usr/bin/env python3
 """在原版 Word 报告的副本上原位插入结果截图与实验小结（WorkBuddy editor_sdk / edsdk）。
 

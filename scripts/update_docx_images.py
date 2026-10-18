@@ -1,3 +1,4 @@
+# Designed by TiantianYe
 #!/usr/bin/env python3
 """通过 WorkBuddy editor_sdk (edsdk) 替换/删除 Word 文档中的图片。
 
