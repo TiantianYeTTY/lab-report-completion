@@ -51,11 +51,12 @@ git clone https://github.com/TiantianYeTTY/lab-report-completion.git ~/.workbudd
 
 | 阶段 | 内容 | 关键点 |
 |---|---|---|
-| 1. 解析输入 | pymupdf 提取指导书文本与页面图；textutil + olefile 从 .doc 二进制中提取全部代码截图并**逐字转录** | 图片按 Data 流签名雕刻提取 |
+| 0. 环境盘点 | 先找前序实验留下的 venv 与启动脚本（.command），分层复用，只补差量包 | 杜绝重复安装与环境污染 |
+| 1. 解析输入 | pymupdf 提取指导书文本与页面图；textutil + olefile 从 .doc 二进制中提取全部代码截图并**逐字转录** | 图片按 Data 流签名雕刻提取；识别"教材案例+扩展题"双题源模板 |
 | 2. 数据检查 | 只读检查数据文件的结构、dtype、NaN 与重复行 | 原件零改动 |
-| 3. 干跑验证 | 全部代码以"警告升级为错误"的最严格模式预跑 | 提前消灭版本兼容问题 |
-| 4. 环境构建 | Python 3.9 + `pandas==1.4.4` + `numpy==1.26.4` + `notebook==6.5.7` 专用 venv | 课程代码在 pandas 3.x 会报错，详见 SKILL.md 版本矩阵 |
-| 5. 真机截图 | Jupyter 真实执行笔记本 → Chrome + CDP 控制导航/滚动 → Quartz 按 PID 定位窗口 → 系统 `screencapture` 截取 | 每张截图自动目检，杜绝对话框/串窗 |
+| 3. 干跑验证 | 全部代码以"警告升级为错误"的最严格模式预跑（import 顺序有讲究） | 提前消灭版本兼容问题；含 macOS 中文字体（SimHei）安装 |
+| 4. 环境构建 | Python 3.9 + `pandas==1.4.4` + `numpy==1.26.4` + `matplotlib==3.9.4` + `pyparsing==3.1.4` + `notebook==6.5.7` 专用 venv | 课程代码在 pandas 3.x 会报错，详见 SKILL.md 版本矩阵 |
+| 5. 真机截图 | Jupyter 真实执行笔记本 → Chrome + CDP 控制导航/滚动 → Quartz 按 PID 定位窗口 → 系统 `screencapture` 截取 | 每张截图自动目检；长笔记本自动补截中间屏 |
 | 6. 交付包 | `实验N代码/`：py 源码 + ipynb + 截图 + 数据副本 + README | 每个 .py 均运行验证 |
 | 7. Word 原位填充 | 复制原版 .doc → 通过 editor_sdk 在副本上原位插入截图与实验小结 → 另存 .docx | 保留原模板全部标题、字体、版式与原代码截图 |
 
@@ -89,36 +90,57 @@ git clone https://github.com/TiantianYeTTY/lab-report-completion.git ~/.workbudd
 ```
 lab-report-completion/
 ├── README.md               ← 本文件
-├── SKILL.md                ← 技能正文：完整工作流 + 20 条易错点速查表 + 检查清单
+├── SKILL.md                ← 技能正文：完整工作流 + 27 条易错点速查表 + 检查清单
 └── scripts/
     ├── capture_screenshots.py   ← 真机截图管线（Chrome+CDP+screencapture，单tab持久导航）
+    ├── capture_middle_screens.py ← 长笔记本补截中间屏（内容高>2×视口时自动补 _3.png）
     ├── update_docx_images.py    ← Word 图片按文档序号替换/删除（edsdk）
     └── fill_report.py           ← 原版 Word 副本原位填充截图与小结（JSON 计划驱动）
 ```
 
+## 🔄 更新记录
+
+- **v1.1（2026-10-25，实验3 实战复盘）**：
+  - 新增「阶段〇：环境盘点」——先找前序实验的 venv/启动脚本再考虑装包，杜绝重复安装与系统/venv 环境污染；
+  - 环境配方新增 `matplotlib==3.9.4` + `pyparsing==3.1.4`（后者防 import 期弃用警告污染 Jupyter 截图）；
+  - 新增 macOS 中文字体（SimHei）安装与 matplotlib 缓存重建流程；
+  - 干跑铁律：`simplefilter('error')` 必须在三方库 import 之后；`MPLBACKEND=Agg` 必须 export；
+  - 新增脚本 `capture_middle_screens.py`（长笔记本中间屏补截）与模板类型 B（教材案例+扩展题）识别指南；
+  - 易错点速查表 20 → 27 条。
+
+
 ## 🐛 已知踩坑点（节选）
 
-SKILL.md 中记录了完整的 20 条「错误现象 → 根因 → 正确处理」，包括：
+SKILL.md 中记录了完整的 27 条「错误现象 → 根因 → 正确处理」，包括：
 
+- 重复安装模块：不盘点既有 venv/启动脚本就 pip install，把工具库误装进错误的 Python；
+- `warnings.simplefilter('error')` 放在 import matplotlib 之前，把三方库内部弃用警告升为错误；
+- matplotlib 3.9 + pyparsing 3.2 在 import 期发弃用警告，粉色框污染 Jupyter 截图；
+- macOS 缺 SimHei 字体导致截图中文全是方框；
+- `MPLBACKEND=Agg` 忘记 export，plt.show() 打开 GUI 窗口阻塞到超时；
 - 环境代理劫持 localhost 导致 CDP 连接 404；
 - Jupyter classic 的滚动容器是 `#site` 而非 documentElement；
 - 多标签页反复开关导致 DevTools WebSocket 全面超时（应使用单 tab 持久导航）；
+- 长笔记本两屏截图漏掉中间 cell 的输出（需补截中间屏）；
 - `doc_find` 匹配只是段落前缀，直接 `end+1` 插入会把标题撕成两半；
 - 强杀 Chrome 后的崩溃对话框与"恢复标签页"气泡的清理方法；
 - ……
 
 ## 🛠️ 可复用脚本
 
-`scripts/` 内三个脚本均为真实实验全流程实测产物，参数化后可直接运行（详见 SKILL.md §8）：
+`scripts/` 内四个脚本均为真实实验全流程实测产物，参数化后可直接运行（详见 SKILL.md §8）：
 
 ```bash
 # ① 真机截图（前置：按 SKILL.md §4.1 启动 Jupyter 与 Chrome）
 python3 scripts/capture_screenshots.py --notebooks-dir /abs/笔记本目录 --out-dir /abs/截图目录
 
-# ② Word 图片替换/删除（先 --dry-run 查看序号）
+# ② 长笔记本补截中间屏（主截图管线跑完后；plan.json 中按 _1,_3,_2 内容顺序排列）
+python3 scripts/capture_middle_screens.py --notebooks-dir /abs/笔记本目录 --out-dir /abs/截图目录
+
+# ③ Word 图片替换/删除（先 --dry-run 查看序号）
 python3 scripts/update_docx_images.py /abs/报告.docx --dry-run
 
-# ③ 原版 Word 副本原位填充（JSON 计划驱动，--print-plan-template 查看结构）
+# ④ 原版 Word 副本原位填充（JSON 计划驱动，--print-plan-template 查看结构）
 python3 scripts/fill_report.py plan.json
 ```
 
